@@ -1,0 +1,24 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Security & Private Keys (CRITICAL)
+*.p8
+*.pem
+*.pub
+rsa_key.p8
+rsa_key.pub
+
+# Environment variables & secrets
+.env
+secrets.toml
+.dlt/secrets.toml
+
+# Operating system files
+.DS_Store
+Thumbs.db
