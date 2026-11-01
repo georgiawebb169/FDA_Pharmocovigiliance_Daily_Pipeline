@@ -4,7 +4,7 @@
 import os #library that interacts with operating systems
 import json #library for parsing and formatting json data 
 from typing import Literal # restricts a string field to set values 
-from pydantic import BaseModel, Field # base model is like a template used to structure data models with expected values - type hints Field adds metadata, constraints and validaiton rules to columns in the data model 
+from pydantic import BaseModel, Field, field_validator # base model is like a template used to structure data models with expected values - type hints Field adds metadata, constraints and validaiton rules to columns in the data model 
 from groq import Groq # library that helps to interact with groq
 import snowflake.connector # library for connecting with snowflake 
 from cryptography.hazmat.backends import default_backend #this function gives code access to OpenSSL the standard crytographic engine 
@@ -34,6 +34,19 @@ class EventEnrichment(BaseModel): # create schema called EventEnrichment, use ba
         max_length=1000,
         description="A concise 1-2 sentence clinical summary of the drug reaction incident."
     )
+
+    @field_validator("event_category", mode="before")
+    @classmethod
+    def normalize_category(cls, v: str) -> str:
+        valid = {
+            "Known Side Effect",
+            "Medication / Administration Error",
+            "Overdose / Toxicity",
+            "Drug Interaction",
+            "Product Quality / Defect",
+            "Other",
+        }
+        return v if v in valid else "Other"
 
 # ---------------------------------------------------------
 # 2. Snowflake Connection Helper (Key-Pair Auth)
@@ -91,17 +104,22 @@ def enrich_event(client: Groq, drugs: str, reactions: str) -> EventEnrichment:
     # "summary": "<concise 1-2 sentence clinical summary>"
     #}
     prompt = f"""Medication: {drugs}
-Adverse Reactions: {reactions}
+    Adverse Reactions: {reactions}
 
-Provide a clinical assessment in JSON format.
-Example format:
-{{
-  "clinical_severity": "Moderate",
-  "event_category": "Known Side Effect",
-  "risk_score": 3,
-  "summary": "Patient experienced adverse reactions following drug administration."
-}}
-"""
+    Provide a clinical assessment in JSON format.
+    You MUST choose one value from each list:
+    - clinical_severity: ["Mild", "Moderate", "Severe", "Critical / Fatal"]
+    - event_category: ["Known Side Effect", "Medication / Administration Error", "Overdose / Toxicity", "Drug Interaction", "Product Quality / Defect", "Other"]
+    - risk_score: integer from 1 to 5
+
+    Example format:
+    {{
+      "clinical_severity": "Moderate",
+      "event_category": "Known Side Effect",
+      "risk_score": 3,
+      "summary": "Patient experienced adverse reactions following drug administration."
+    }}
+    """
 
     # api requires oyu to tag every messga eiwht who uis soeaking using a role 
     # role: system means the next set of instructions are very important'
