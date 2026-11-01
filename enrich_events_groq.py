@@ -90,17 +90,18 @@ def enrich_event(client: Groq, drugs: str, reactions: str) -> EventEnrichment:
     # "risk_score": <int 1-5>,
     # "summary": "<concise 1-2 sentence clinical summary>"
     #}
-    prompt = (
-        f"Medication: {drugs}\n"
-        f"Adverse Reactions: {reactions}\n\n"
-        "Return ONLY a valid JSON object matching this schema:\n"
-        "{\n"
-        '  "clinical_severity": "Mild" | "Moderate" | "Severe" | "Critical / Fatal",\n'
-        '  "event_category": "Known Side Effect" | "Medication / Administration Error" | "Overdose / Toxicity" | "Drug Interaction" | "Product Quality / Defect" | "Other",\n'
-        '  "risk_score": <int 1-5>,\n'
-        '  "summary": "<concise 1-2 sentence clinical summary>"\n'
-        "}"
-    )
+    prompt = f"""Medication: {drugs}
+Adverse Reactions: {reactions}
+
+Provide a clinical assessment in JSON format.
+Example format:
+{{
+  "clinical_severity": "Moderate",
+  "event_category": "Known Side Effect",
+  "risk_score": 3,
+  "summary": "Patient experienced adverse reactions following drug administration."
+}}
+"""
 
     # api requires oyu to tag every messga eiwht who uis soeaking using a role 
     # role: system means the next set of instructions are very important'
