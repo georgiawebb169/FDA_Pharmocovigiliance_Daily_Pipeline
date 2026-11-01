@@ -1,0 +1,6 @@
+dlt
+requests
+snowflake-connector-python
+cryptography
+groq
+pydantic
