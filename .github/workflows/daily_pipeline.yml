@@ -2,9 +2,9 @@ name: FDA Daily Pipeline
 
 on:
   schedule:
-    # Runs everyday at 06:00 UTC
-    - cron: "0 6 * * *"
-  # Allows you to trigger it manually via a button in GitHub
+    # Runs at 06:00 UTC on day 1 of January, April, July, and October (every 3 months)
+    - cron: '0 6 1 1,4,7,10 *'
+  # Keeps the manual run button enabled so you can test anytime
   workflow_dispatch:
 
 jobs:
