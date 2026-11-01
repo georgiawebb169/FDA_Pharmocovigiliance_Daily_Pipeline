@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install dlt requests snowflake-connector-python cryptography groq pydantic
+          pip install -r requirements.txt
 
       - name: Create Temporary RSA Key File
         env:
