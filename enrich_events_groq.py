@@ -79,7 +79,7 @@ def get_snowflake_connection():
 # ---------------------------------------------------------
 #creates function named enrich_event that takes parameters groq, drugs, reactions , will return a model trhat hasa schema defined byeventenrichment pydantic model 
 def enrich_event(client: Groq, drugs: str, reactions: str) -> EventEnrichment:
-    prompt = ( # this is text sent to llm, 
+     # this is text sent to llm, 
         #Medication: Ibuprofen
 #Adverse Reactions: rash
 
@@ -105,7 +105,8 @@ def enrich_event(client: Groq, drugs: str, reactions: str) -> EventEnrichment:
 # role: system means the next set of instructions are very important'
 # role: user means this is the person asking the quesiont, this is the current task the llm is being asked to solve 
 # so systme si like this is what the lm shiould feel, and user is like this is the task you are being asked to do 
-    chat_completion = client.chat.completions.create(
+    prompt = (
+        chat_completion = client.chat.completions.create(
         messages=[
             {
                 "role": "system",
@@ -117,7 +118,7 @@ def enrich_event(client: Groq, drugs: str, reactions: str) -> EventEnrichment:
         response_format={"type": "json_object"},
         temperature=0.1 # lower the number, the more determinsitc, strict, robotic the next word ai generates is, typically 0.0 to 1.0, sometimes up to 2.0 
     )
-
+)
 #chat_completion is the respons ebudnle returned by the api 
     raw_json = chat_completion.choices[0].message.content # get the text string writtne by ai, message is te metadats sbout the role and the promt, , choices is lst of answers the model geenrated, you cna ask a llm for multiple answers and htenpick, we didnt we jsut asked for 1 chih is hwy it is sety oty thef irst 1 at 0 
     return EventEnrichment.model_validate_json(raw_json) # passes the respobse to my pydantic class whcih is eventenrichement , model vlaidate json says make the text into json data, 
