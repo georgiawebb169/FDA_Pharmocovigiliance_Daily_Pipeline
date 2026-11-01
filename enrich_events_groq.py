@@ -44,7 +44,7 @@ def get_snowflake_connection():
         #private key is on my computer
         key_data = key_file.read()
 
-#private keys are either PEM or DER, PEM is plain text starting with -----BEGIN PRIVATE KEY-----
+    #private keys are either PEM or DER, PEM is plain text starting with -----BEGIN PRIVATE KEY-----
     if b"-----BEGIN" in key_data:
         p_key = serialization.load_pem_private_key( #prswes the key 
             key_data,
@@ -63,7 +63,7 @@ def get_snowflake_connection():
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.NoEncryption()
     )
-#connecrt tp snowflake schema 
+    #connecrt tp snowflake schema 
     return snowflake.connector.connect(
         account=os.getenv("SNOWFLAKE_ACCOUNT", "DZOKCNJ-VC37479"),
         user=os.getenv("SNOWFLAKE_USER", "GEORGIAMLWEBB"),
@@ -79,34 +79,34 @@ def get_snowflake_connection():
 # ---------------------------------------------------------
 #creates function named enrich_event that takes parameters groq, drugs, reactions , will return a model trhat hasa schema defined byeventenrichment pydantic model 
 def enrich_event(client: Groq, drugs: str, reactions: str) -> EventEnrichment:
-     # this is text sent to llm, 
-        #Medication: Ibuprofen
-#Adverse Reactions: rash
+    # this is text sent to llm, 
+    #Medication: Ibuprofen
+    #Adverse Reactions: rash
 
-#Return ONLY a valid JSON object matching this schema:
-#{
- # "clinical_severity": "Mild" | "Moderate" | "Severe" | "Critical / Fatal",
- # "event_category": "Known Side Effect" | "Medication / Administration Error" | "Overdose / Toxicity" | "Drug Interaction" | "Product Quality / Defect" | "Other",
- # "risk_score": <int 1-5>,
- # "summary": "<concise 1-2 sentence clinical summary>"
-#}
-      #  f"Medication: {drugs}\n"
-       # f"Adverse Reactions: {reactions}\n\n"
-       # "Return ONLY a valid JSON object matching this schema:\n"
-       # "{\n"
-       # '  "clinical_severity": "Mild" | "Moderate" | "Severe" | "Critical / Fatal",\n'
-       # '  "event_category": "Known Side Effect" | "Medication / Administration Error" | "Overdose / Toxicity" | "Drug Interaction" | "Product Quality / Defect" | "Other",\n'
-       # '  "risk_score": <int 1-5>,\n'
-       # '  "summary": "<concise 1-2 sentence clinical summary>"\n'
-       # "}"
-   # )
-
-# api requires oyu to tag every messga eiwht who uis soeaking using a role 
-# role: system means the next set of instructions are very important'
-# role: user means this is the person asking the quesiont, this is the current task the llm is being asked to solve 
-# so systme si like this is what the lm shiould feel, and user is like this is the task you are being asked to do 
+    #Return ONLY a valid JSON object matching this schema:
+    #{
+    # "clinical_severity": "Mild" | "Moderate" | "Severe" | "Critical / Fatal",
+    # "event_category": "Known Side Effect" | "Medication / Administration Error" | "Overdose / Toxicity" | "Drug Interaction" | "Product Quality / Defect" | "Other",
+    # "risk_score": <int 1-5>,
+    # "summary": "<concise 1-2 sentence clinical summary>"
+    #}
     prompt = (
-        chat_completion = client.chat.completions.create(
+        f"Medication: {drugs}\n"
+        f"Adverse Reactions: {reactions}\n\n"
+        "Return ONLY a valid JSON object matching this schema:\n"
+        "{\n"
+        '  "clinical_severity": "Mild" | "Moderate" | "Severe" | "Critical / Fatal",\n'
+        '  "event_category": "Known Side Effect" | "Medication / Administration Error" | "Overdose / Toxicity" | "Drug Interaction" | "Product Quality / Defect" | "Other",\n'
+        '  "risk_score": <int 1-5>,\n'
+        '  "summary": "<concise 1-2 sentence clinical summary>"\n'
+        "}"
+    )
+
+    # api requires oyu to tag every messga eiwht who uis soeaking using a role 
+    # role: system means the next set of instructions are very important'
+    # role: user means this is the person asking the quesiont, this is the current task the llm is being asked to solve 
+    # so systme si like this is what the lm shiould feel, and user is like this is the task you are being asked to do 
+    chat_completion = client.chat.completions.create(
         messages=[
             {
                 "role": "system",
@@ -118,8 +118,8 @@ def enrich_event(client: Groq, drugs: str, reactions: str) -> EventEnrichment:
         response_format={"type": "json_object"},
         temperature=0.1 # lower the number, the more determinsitc, strict, robotic the next word ai generates is, typically 0.0 to 1.0, sometimes up to 2.0 
     )
-)
-#chat_completion is the respons ebudnle returned by the api 
+
+    #chat_completion is the respons ebudnle returned by the api 
     raw_json = chat_completion.choices[0].message.content # get the text string writtne by ai, message is te metadats sbout the role and the promt, , choices is lst of answers the model geenrated, you cna ask a llm for multiple answers and htenpick, we didnt we jsut asked for 1 chih is hwy it is sety oty thef irst 1 at 0 
     return EventEnrichment.model_validate_json(raw_json) # passes the respobse to my pydantic class whcih is eventenrichement , model vlaidate json says make the text into json data, 
 
@@ -155,7 +155,7 @@ def main():
         cursor.execute("""
             SELECT 
                 r.safety_report_id, 
-                r.reported_drugs,
+                r.reported_drugs, 
                 r.adverse_reactions
             FROM fda_DB.RAW.ADVERSE_EVENTS r
             LEFT JOIN fda_DB.ENRICHED.ADVERSE_EVENTS_ENRICHED e
@@ -183,14 +183,14 @@ def main():
                 (safety_report_id, reported_drugs, adverse_reactions, clinical_severity, event_category, risk_score, summary)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
-#idx is short for index, it is a counter which counts which item you are starting with 1, return 3 variables saety report id, drugs, reactions 
+        #idx is short for index, it is a counter which counts which item you are starting with 1, return 3 variables saety report id, drugs, reactions 
         for idx, (safety_report_id, drugs, reactions) in enumerate(records, 1):
             print(f"[{idx}/{len(records)}] Enriching ID {safety_report_id}...")
             #[1/50] Enriching ID 1001...
             #[2/50] Enriching ID 1002...
-        #calls the function we made earlier , enrich_event(client: Groq, drugs: str, reactions: str) -> EventEnrichment:
+            #calls the function we made earlier , enrich_event(client: Groq, drugs: str, reactions: str) -> EventEnrichment:
             enriched = enrich_event(client, drugs or "Unknown", reactions) # this returns 4 columns, clincial severity, event cateogry, risk score, summary 
-#drugs or "Unknown": A safety fallback. If the database record had an empty or None value for the drug name, it passes the string "Unknown" so the prompt doesn't break.
+            #drugs or "Unknown": A safety fallback. If the database record had an empty or None value for the drug name, it passes the string "Unknown" so the prompt doesn't break.
             params = (
                 safety_report_id,
                 drugs, reactions, enriched.clinical_severity, enriched.event_category, enriched.risk_score, enriched.summary,
