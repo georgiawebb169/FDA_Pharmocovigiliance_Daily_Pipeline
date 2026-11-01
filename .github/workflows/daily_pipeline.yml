@@ -1,0 +1,60 @@
+name: FDA Daily Pipeline
+
+on:
+  schedule:
+    # Runs everyday at 06:00 UTC
+    - cron: "0 6 * * *"
+  # Allows you to trigger it manually via a button in GitHub
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install dlt requests snowflake-connector-python cryptography groq pydantic
+
+      - name: Create Temporary RSA Key File
+        env:
+          SNOWFLAKE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY_PEM }}
+        run: |
+          echo "$SNOWFLAKE_KEY" > rsa_key.p8
+          chmod 600 rsa_key.p8
+
+      - name: Run Ingestion Pipeline (dlt -> Snowflake)
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          DESTINATION__SNOWFLAKE__CREDENTIALS__ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          DESTINATION__SNOWFLAKE__CREDENTIALS__USER: ${{ secrets.SNOWFLAKE_USER }}
+          DESTINATION__SNOWFLAKE__CREDENTIALS__PRIVATE_KEY_PATH: "rsa_key.p8"
+          DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE: "FDA_DB"
+          DESTINATION__SNOWFLAKE__CREDENTIALS__ROLE: "FDA_ROLE"
+          DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE: "FDA_WH"
+        run: |
+          python fda_pipeline.py
+
+      - name: Run LLM Risk Enrichment (Groq)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+        run: |
+          python enrich_events_groq.py
+
+      - name: Delete RSA Key
+        if: always()
+        run: |
+          rm -f rsa_key.p8
