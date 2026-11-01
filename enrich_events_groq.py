@@ -114,7 +114,7 @@ def enrich_event(client: Groq, drugs: str, reactions: str) -> EventEnrichment:
             },
             {"role": "user", "content": prompt}
         ],
-        model="llama-3.1-8b-instant",
+        model="openai/gpt-oss-20b",
         response_format={"type": "json_object"},
         temperature=0.1 # lower the number, the more determinsitc, strict, robotic the next word ai generates is, typically 0.0 to 1.0, sometimes up to 2.0 
     )
