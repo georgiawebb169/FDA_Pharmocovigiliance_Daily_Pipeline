@@ -4,11 +4,8 @@ An automated ELT pipeline that extracts adverse drug event reports from the open
 
 ⚡ Architecture Flow
 
-openFDA API ──(dlt)──> Snowflake RAW ──(Python + Key-Pair Auth)──> Groq LLM (gpt-oss-20b)
-                                                                       │
-Snowflake Analytics Marts <─── Snowflake ENRICHED <───(Pydantic JSON)──┘
-
-
+openFDA API ──(dlt)──> Snowflake RAW ──(Python + Key-Pair Auth)──> Groq LLM (gpt-oss-20b) ──(Pydantic JSON)──> Snowflake ENRICHED ──>Snowflake Analytics Marts
+                                                                       
 🛠️ Tech Stack & Skills
 
 Data Warehousing & SQL: Snowflake (RBAC, Warehouses, MERGE INTO, LATERAL SPLIT_TO_TABLE, Analytical Marts)
@@ -42,6 +39,7 @@ pip install dlt requests snowflake-connector-python cryptography groq pydantic
 export GROQ_API_KEY="your_groq_api_key"
 export SNOWFLAKE_ACCOUNT="your_snowflake_account_locator"
 export SNOWFLAKE_USER="your_snowflake_username"
+export SNOWFLAKE_PRIVATE_KEY_PATH="rsa_key.p8"  # Path to your generated private key (also configure in .dlt/secrets.toml for dlt)
 
 
 3. Run Pipeline
