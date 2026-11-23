@@ -13,10 +13,10 @@ from cryptography.hazmat.primitives import serialization #hazmat serves as a war
 # ---------------------------------------------------------
 # 1. Pydantic Pharmacovigilance Schema
 # ---------------------------------------------------------
-# so this desrcibes the 4 columns the llm must create and the values of those columns it is allwoed to return 
+# so this desrcibes the 4 columns the llm must create and the values of those columns it is allowed to return 
 class EventEnrichment(BaseModel): # create schema called EventEnrichment, use basemodel template which has predefined data validation and json parsing abilities 
     clinical_severity: Literal["Mild", "Moderate", "Severe", "Critical / Fatal"] = Field(
-        description="Assessed clinical severity of the adverse reaction." # model musyt return mild moderate severe or critical/fatal 
+        description="Assessed clinical severity of the adverse reaction." # model must return 'mild', 'moderate', 'severe', or 'critical / fatal' 
     )
     event_category: Literal[
         "Known Side Effect",
@@ -53,15 +53,15 @@ class EventEnrichment(BaseModel): # create schema called EventEnrichment, use ba
 # ---------------------------------------------------------
 def get_snowflake_connection():
     with open("rsa_key.p8", "rb") as key_file: #rsa is digital credential, always public key and private key that are linked 
-        #public key is given to snowflake, when i set up my snowflake acciunt i ran command ALTER USER GEORGIAMLWEBB SET RSA_PUBLIC_KEY='MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...';
+        #public key is given to snowflake, when I set up my snowflake account I ran command ALTER USER GEORGIAMLWEBB SET RSA_PUBLIC_KEY='MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...';
         #private key is on my computer
         key_data = key_file.read()
 
     #private keys are either PEM or DER, PEM is plain text starting with -----BEGIN PRIVATE KEY-----
     if b"-----BEGIN" in key_data:
-        p_key = serialization.load_pem_private_key( #prswes the key 
+        p_key = serialization.load_pem_private_key( #prarses the key 
             key_data,
-            password=os.getenv("SNOWFLAKE_PRIVATE_KEY_PASSPHRASE", "").encode() or None,#checks if key was encyrpted with a passphrase read from enivronemne varaibles , if no passophrase was set it passes none 
+            password=os.getenv("SNOWFLAKE_PRIVATE_KEY_PASSPHRASE", "").encode() or None,#checks if key was encrypted with a passphrase read from enivronment variables , if no passphrase was set it passes none 
             backend=default_backend()
         )
     else:
@@ -71,12 +71,12 @@ def get_snowflake_connection():
             backend=default_backend()
         )
 
-    pkb = p_key.private_bytes(#converts private key into format required by snowlake connector 
+    pkb = p_key.private_bytes(#converts private key into format required by snowflake connector 
         encoding=serialization.Encoding.DER,
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.NoEncryption()
     )
-    #connecrt tp snowflake schema 
+    #connect to snowflake schema 
     return snowflake.connector.connect(
         account=os.getenv("SNOWFLAKE_ACCOUNT", "DZOKCNJ-VC37479"),
         user=os.getenv("SNOWFLAKE_USER", "GEORGIAMLWEBB"),
@@ -90,7 +90,7 @@ def get_snowflake_connection():
 # ---------------------------------------------------------
 # 3. LLM Enrichment Helper (Groq Free Tier)
 # ---------------------------------------------------------
-#creates function named enrich_event that takes parameters groq, drugs, reactions , will return a model trhat hasa schema defined byeventenrichment pydantic model 
+#creates function named enrich_event that takes parameters groq, drugs, reactions , will return a model that hasa schema defined by event enrichment pydantic model 
 def enrich_event(client: Groq, drugs: str, reactions: str) -> EventEnrichment:
     # this is text sent to llm, 
     #Medication: Ibuprofen
@@ -121,10 +121,7 @@ def enrich_event(client: Groq, drugs: str, reactions: str) -> EventEnrichment:
     }}
     """
 
-    # api requires oyu to tag every messga eiwht who uis soeaking using a role 
-    # role: system means the next set of instructions are very important'
-    # role: user means this is the person asking the quesiont, this is the current task the llm is being asked to solve 
-    # so systme si like this is what the lm shiould feel, and user is like this is the task you are being asked to do 
+    # api requires you to tag every message with who is speaking using a role 
     chat_completion = client.chat.completions.create(
         messages=[
             {
